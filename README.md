@@ -121,7 +121,7 @@ This is the RAG-style enhancement: the model receives actual page text and can i
 
 ## Why this project matters for AI recruiting
 
-This project shows recruiters and AI engineers that you can:
+This project shows that I can:
 - architect multi-agent systems.
 - implement custom MCP tools for business logic.
 - use browser automation to access data behind interactive websites.
