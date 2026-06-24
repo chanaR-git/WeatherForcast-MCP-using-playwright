@@ -1,3 +1,5 @@
+import re
+
 from mcp.server.fastmcp import FastMCP
 from playwright.async_api import TimeoutError as PlaywrightTimeout
 from playwright.async_api import async_playwright, Browser, Page
@@ -201,9 +203,51 @@ async def select_weather_forecast_city_israel() -> dict:
         }
 
 
+def clean_text(raw_text: str) -> str:
+    """Clean page text by removing scripts, styles, extra whitespace, and non-content characters."""
+    text = re.sub(r"<script.*?>.*?</script>", "", raw_text, flags=re.S | re.I)
+    text = re.sub(r"<style.*?>.*?</style>", "", text, flags=re.S | re.I)
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = re.sub(r"\s+", " ", text)
+    text = text.strip()
+    return text
+
+
+@mcp.tool()
+async def extract_page_context_for_llm() -> dict:
+    """Extract page content, clean it, and return context-ready text for an LLM."""
+    global page_instance
+
+    if page_instance is None:
+        return {
+            "status": "error",
+            "message": "Page not initialized. Call open_weather_forecast_israel first.",
+            "error_type": "page_not_initialized"
+        }
+
+    try:
+        raw_html = await page_instance.content()
+        cleaned_text = clean_text(raw_html)
+
+        # Truncate if extremely long, but keep enough content for LLM context
+        snippet = cleaned_text[:32000]
+
+        return {
+            "status": "success",
+            "message": "Page content extracted and cleaned for LLM context.",
+            "context_text": snippet,
+            "text_length": len(snippet)
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Error extracting page content: {str(e)}",
+            "error_type": "general"
+        }
+
+
 def main():
     mcp.run(transport="stdio")
-
 
 
 if __name__ == "__main__":
